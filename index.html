@@ -3,29 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Christmas - Heart Beat Fix</title>
+    <title>Magic Christmas - Smooth Edition</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000000; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
         #canvas-container { width: 100%; height: 100vh; display: block; }
         #ui-layer { position: absolute; bottom: 30px; width: 100%; text-align: center; pointer-events: none; z-index: 100; }
-        .guide { color: rgba(255, 255, 255, 0.9); font-size: 14px; margin-bottom: 20px; text-shadow: 0 2px 4px black; background: rgba(0,0,0,0.6); padding: 12px 20px; display: inline-block; border-radius: 25px; border: 1px solid rgba(255,255,255,0.2); }
-        button { pointer-events: auto; cursor: pointer; background: linear-gradient(to bottom, #D32F2F, #8B0000); color: #FFF; border: 2px solid #FFD700; padding: 15px 50px; border-radius: 30px; font-weight: 800; font-size: 16px; box-shadow: 0 0 30px rgba(255, 0, 0, 0.6); animation: pulse 1.5s infinite; text-transform: uppercase; letter-spacing: 2px; }
+        .guide { color: rgba(255, 255, 255, 0.7); font-size: 13px; margin-bottom: 20px; text-shadow: 0 2px 4px black; background: rgba(0,0,0,0.4); padding: 8px 15px; display: inline-block; border-radius: 20px; }
+        button { pointer-events: auto; cursor: pointer; background: linear-gradient(to bottom, #D32F2F, #8B0000); color: #FFF; border: 2px solid #FFD700; padding: 15px 50px; border-radius: 30px; font-weight: 800; font-size: 16px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4); animation: pulse 1.5s infinite; text-transform: uppercase; letter-spacing: 2px; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        #camera-preview { position: absolute; top: 15px; right: 15px; width: 120px; height: 90px; border: 2px solid rgba(255,215,0,0.5); transform: scaleX(-1); opacity: 0.8; border-radius: 8px; background: #000; }
-        #copyright { position: absolute; bottom: 10px; right: 15px; color: rgba(255, 255, 255, 0.3); font-size: 12px; z-index: 100; font-family: sans-serif; pointer-events: none; }
+        #camera-preview { position: absolute; top: 10px; right: 10px; width: 100px; height: 75px; border: 1px solid rgba(255,215,0,0.3); transform: scaleX(-1); border-radius: 4px; opacity: 0.7; }
+        #copyright { position: absolute; bottom: 10px; right: 15px; color: rgba(255, 255, 255, 0.2); font-size: 11px; pointer-events: none; }
     </style>
 </head>
 <body>
     <div id="ui-layer">
         <div class="guide">
-            🖐 <b>Xòe tay:</b> Xem ảnh (Trái/Phải để xoay) <br> 
-            🫶 <b>Ghép 2 tay:</b> I MISS YOU ❤️ &nbsp;|&nbsp; ✊ <b>Nắm tay:</b> Cây thông
+            🖐 <b>Mở tay:</b> Xoay ảnh &nbsp;|&nbsp; 🫶 <b>Ghép tay:</b> Trái tim &nbsp;|&nbsp; ✊ <b>Nắm tay:</b> Cây thông
         </div>
         <br>
         <button id="btnStart" onclick="startSystem()">START MAGIC</button>
@@ -44,48 +42,43 @@
         const photoFiles = ['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg'];
         const photoTextures = photoFiles.map(f => loader.load(f));
 
-        function createCustomTexture(type) {
+        function createOptTexture(type) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            const grd = ctx.createRadialGradient(32, 32, 0, 32, 32, 25);
-            if (type === 'gold') {
-                grd.addColorStop(0, '#FFFFFF'); grd.addColorStop(0.4, '#FFD700'); grd.addColorStop(1, 'rgba(0,0,0,0)');
-            } else if (type === 'red') {
-                grd.addColorStop(0, '#FFCCCC'); grd.addColorStop(0.4, '#FF0000'); grd.addColorStop(1, 'rgba(0,0,0,0)');
-            }
+            const grd = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            if (type === 'gold') { grd.addColorStop(0, '#FFF'); grd.addColorStop(0.4, '#FFD700'); }
+            else { grd.addColorStop(0, '#FFCCCC'); grd.addColorStop(0.4, '#FF0000'); }
+            grd.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = grd; ctx.fillRect(0,0,64,64);
             return new THREE.CanvasTexture(canvas);
         }
 
-        const textures = { gold: createCustomTexture('gold'), red: createCustomTexture('red') };
-        const CONFIG = { goldCount: 1500, redCount: 300, treeHeight: 70, treeBaseRadius: 35 };
-
-        let scene, camera, renderer, state = 'TREE', stateHoldCounter = 0;
+        const CONFIG = { goldCount: 1500, redCount: 250, treeHeight: 70, treeBaseRadius: 35 };
+        let scene, camera, renderer, state = 'TREE', handX = 0.5, smoothedRotY = 0;
         let groupGold, groupRed, photoMeshes = [], titleMesh, starMesh, loveMesh, snowField;
-        let rawHandX = 0.5, smoothedHandX = 0.5, smoothedRotY = 0, selectedIndex = 0;
+        let selectedIndex = 0;
 
         function init3D() {
             scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x000000, 0.002);
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-            camera.position.z = 100;
-            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 500);
+            camera.position.z = 110;
+
             renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(1); 
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            groupGold = createParticleSystem('gold', CONFIG.goldCount, 1.8);
-            groupRed = createParticleSystem('red', CONFIG.redCount, 3.0); 
+            groupGold = createParticles('gold', CONFIG.goldCount, 1.8);
+            groupRed = createParticles('red', CONFIG.redCount, 3.0);
 
-            // TUYẾT RƠI
+            // Tuyết rơi tối ưu
             const snowGeo = new THREE.BufferGeometry();
-            const snowPosArr = new Float32Array(1000 * 3);
-            for(let i=0; i<3000; i++) snowPosArr[i] = (Math.random() - 0.5) * 300;
-            snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPosArr, 3));
-            const snowMat = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.6, transparent: true, opacity: 0.8 });
-            snowField = new THREE.Points(snowGeo, snowMat);
+            const snowPos = new Float32Array(800 * 3);
+            for(let i=0; i<2400; i++) snowPos[i] = (Math.random() - 0.5) * 300;
+            snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+            snowField = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.5, transparent: true, opacity: 0.6 }));
             scene.add(snowField);
 
             createPhotos();
@@ -93,28 +86,28 @@
             animate();
         }
 
-        function createParticleSystem(type, count, size) {
-            const pos = [], exp = [], tree = [], heart = [];
+        function createParticles(type, count, size) {
+            const geo = new THREE.BufferGeometry();
+            const pos = [], tree = [], heart = [], explode = [];
             for(let i=0; i<count; i++) {
                 const h = Math.random() * CONFIG.treeHeight;
-                const rTree = (1 - (h / CONFIG.treeHeight)) * CONFIG.treeBaseRadius * Math.sqrt(Math.random());
-                const tTree = Math.random() * Math.PI * 2;
-                tree.push(rTree * Math.cos(tTree), h - CONFIG.treeHeight/2, rTree * Math.sin(tTree));
-                
-                const u = Math.random(), v = Math.random(), phi = Math.acos(2 * v - 1), lam = 2 * Math.PI * u;
-                const rExp = 60 * Math.cbrt(Math.random());
-                exp.push(rExp * Math.sin(phi) * Math.cos(lam), rExp * Math.sin(phi) * Math.sin(lam), rExp * Math.cos(phi));
-                
+                const r = (1 - h/CONFIG.treeHeight) * CONFIG.treeBaseRadius * Math.sqrt(Math.random());
+                const t = Math.random() * Math.PI * 2;
+                tree.push(r * Math.cos(t), h - 35, r * Math.sin(t));
+
                 const tH = Math.random() * Math.PI * 2;
-                let hx = 16 * Math.pow(Math.sin(tH), 3), hy = 13 * Math.cos(tH) - 5 * Math.cos(2*tH) - 2 * Math.cos(3*tH) - Math.cos(4*tH);
+                let hx = 16 * Math.pow(Math.sin(tH), 3), hy = 13*Math.cos(tH)-5*Math.cos(2*tH)-2*Math.cos(3*tH)-Math.cos(4*tH);
                 heart.push(hx * 2.2, hy * 2.2 + 5, (Math.random()-0.5)*10);
-                
+
+                const rad = 65 * Math.cbrt(Math.random());
+                const phi = Math.acos(2 * Math.random() - 1), lam = 2 * Math.PI * Math.random();
+                explode.push(rad * Math.sin(phi) * Math.cos(lam), rad * Math.sin(phi) * Math.sin(lam), rad * Math.cos(phi));
+
                 pos.push(tree[i*3], tree[i*3+1], tree[i*3+2]);
             }
-            const geo = new THREE.BufferGeometry();
             geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-            geo.userData = { tree, explode: exp, heart };
-            const mat = new THREE.PointsMaterial({ size, map: textures[type === 'gold'?'gold':'red'], transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+            geo.userData = { tree, heart, explode };
+            const mat = new THREE.PointsMaterial({ size, map: createOptTexture(type), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
             const p = new THREE.Points(geo, mat); scene.add(p); return p;
         }
 
@@ -123,30 +116,29 @@
             photoTextures.forEach((tex, i) => {
                 const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
                 const border = new THREE.Mesh(new THREE.PlaneGeometry(11, 11), new THREE.MeshBasicMaterial({ color: 0xFFD700 }));
-                border.position.z = -0.1; mesh.add(border);
+                border.position.z = -0.05; mesh.add(border);
                 mesh.visible = false; scene.add(mesh); photoMeshes.push(mesh);
             });
         }
 
         function createDecorations() {
             const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 256; const ctx = canvas.getContext('2d');
-            ctx.font = 'bold italic 90px "Times New Roman"'; ctx.fillStyle = '#FFD700'; ctx.textAlign = 'center'; ctx.shadowColor = "#FF0000"; ctx.shadowBlur = 40; 
+            ctx.font = 'bold italic 90px "Times New Roman"'; ctx.fillStyle = '#FFD700'; ctx.textAlign = 'center'; ctx.shadowColor = "#FF0000"; ctx.shadowBlur = 30; 
             ctx.fillText("MERRY CHRISTMAS", 512, 130);
-            titleMesh = new THREE.Mesh(new THREE.PlaneGeometry(60, 15), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, blending: THREE.AdditiveBlending }));
-            titleMesh.position.set(0, 50, 0); scene.add(titleMesh);
+            titleMesh = new THREE.Mesh(new THREE.PlaneGeometry(60, 15), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
+            titleMesh.position.y = 50; scene.add(titleMesh);
 
-            const starCanvas = document.createElement('canvas'); starCanvas.width = 128; starCanvas.height = 128; const sCtx = starCanvas.getContext('2d');
-            sCtx.fillStyle = "#FFFF00"; sCtx.shadowColor="#FFF"; sCtx.shadowBlur=20; sCtx.beginPath();
-            const cx=64, cy=64, outer=50, inner=20;
-            for(let i=0; i<5; i++){ sCtx.lineTo(cx + Math.cos((18+i*72)/180*Math.PI)*outer, cy - Math.sin((18+i*72)/180*Math.PI)*outer); sCtx.lineTo(cx + Math.cos((54+i*72)/180*Math.PI)*inner, cy - Math.sin((54+i*72)/180*Math.PI)*inner); }
+            const sCanvas = document.createElement('canvas'); sCanvas.width = 128; sCanvas.height = 128; const sCtx = sCanvas.getContext('2d');
+            sCtx.fillStyle = "#FFFF00"; sCtx.beginPath();
+            for(let i=0; i<5; i++){ sCtx.lineTo(64+Math.cos((18+i*72)/180*Math.PI)*50, 64-Math.sin((18+i*72)/180*Math.PI)*50); sCtx.lineTo(64+Math.cos((54+i*72)/180*Math.PI)*20, 64-Math.sin((54+i*72)/180*Math.PI)*20); }
             sCtx.closePath(); sCtx.fill();
-            starMesh = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(starCanvas), transparent: true, blending: THREE.AdditiveBlending }));
-            starMesh.position.set(0, CONFIG.treeHeight/2 + 2, 0); scene.add(starMesh);
+            starMesh = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sCanvas), transparent: true }));
+            starMesh.position.y = 37; scene.add(starMesh);
 
-            const loveCanvas = document.createElement('canvas'); loveCanvas.width = 1024; loveCanvas.height = 256; const lCtx = loveCanvas.getContext('2d');
-            lCtx.font = 'bold 120px "Segoe UI", sans-serif'; lCtx.fillStyle = '#FF69B4'; lCtx.textAlign = 'center'; lCtx.shadowColor = "#FF1493"; lCtx.shadowBlur = 40; 
+            const lCanvas = document.createElement('canvas'); lCanvas.width = 1024; lCanvas.height = 256; const lCtx = lCanvas.getContext('2d');
+            lCtx.font = 'bold 120px "Segoe UI", sans-serif'; lCtx.fillStyle = '#FF69B4'; lCtx.textAlign = 'center'; lCtx.shadowColor = "#FF1493"; lCtx.shadowBlur = 35; 
             lCtx.fillText("I MISS YOU ❤️", 512, 130);
-            loveMesh = new THREE.Mesh(new THREE.PlaneGeometry(70, 18), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(loveCanvas), transparent: true, blending: THREE.AdditiveBlending }));
+            loveMesh = new THREE.Mesh(new THREE.PlaneGeometry(70, 18), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(lCanvas), transparent: true }));
             loveMesh.position.set(0, 0, 20); loveMesh.visible = false; scene.add(loveMesh);
         }
 
@@ -154,28 +146,23 @@
             requestAnimationFrame(animate);
             const time = Date.now() * 0.001;
             
-            smoothedHandX += (rawHandX - smoothedHandX) * 0.12;
-            let delta = (Math.abs(smoothedHandX - 0.5) < 0.1) ? 0 : (smoothedHandX - 0.5);
-
-            if (state === 'EXPLODE' || state === 'PHOTO') smoothedRotY += delta * 0.08;
-            else smoothedRotY *= 0.95;
+            let targetRot = (handX - 0.5) * 4;
+            smoothedRotY += (targetRot - smoothedRotY) * 0.05;
 
             if(snowField) {
-                snowField.position.y -= 0.15;
+                snowField.position.y -= 0.12;
                 if(snowField.position.y < -150) snowField.position.y = 150;
             }
 
-            // NHỊP ĐẬP CHO TRÁI TIM (CHỈ CHO PHÂN TỬ)
-            const heartScale = 1 + Math.abs(Math.sin(time * 4)) * 0.15;
+            const hBeat = 1 + Math.abs(Math.sin(time * 4)) * 0.15;
 
             [groupGold, groupRed].forEach(g => {
                 const pos = g.geometry.attributes.position.array;
                 const targets = g.geometry.userData[state === 'PHOTO' ? 'explode' : state.toLowerCase()];
                 for(let i=0; i<pos.length; i++) {
-                    let targetVal = targets[i];
-                    // Nếu là trạng thái trái tim, nhân thêm tỉ lệ nhịp đập
-                    if (state === 'HEART') targetVal *= heartScale;
-                    pos[i] += (targetVal - pos[i]) * 0.1;
+                    let tVal = targets[i];
+                    if (state === 'HEART') tVal *= hBeat;
+                    pos[i] += (tVal - pos[i]) * 0.1;
                 }
                 g.geometry.attributes.position.needsUpdate = true;
                 g.rotation.y = (state === 'TREE') ? time * 0.5 : smoothedRotY;
@@ -184,8 +171,6 @@
             titleMesh.visible = (state === 'TREE');
             starMesh.visible = (state === 'TREE');
             loveMesh.visible = (state === 'HEART');
-            // Chữ I MISS YOU giữ nguyên kích thước không đổi
-            loveMesh.scale.set(1, 1, 1); 
 
             photoMeshes.forEach((m, i) => {
                 if (state === 'EXPLODE') {
@@ -193,10 +178,13 @@
                     const angle = smoothedRotY + i * (Math.PI*2/5);
                     m.position.lerp(new THREE.Vector3(Math.sin(angle)*30, Math.sin(time+i)*2, Math.cos(angle)*30), 0.1);
                     m.lookAt(camera.position);
-                    m.scale.lerp(new THREE.Vector3(0.8, 0.8, 0.8), 0.1);
+                    m.scale.setScalar(0.8);
                     if (m.position.z > 20) selectedIndex = i;
                 } else if (state === 'PHOTO' && i === selectedIndex) {
-                    m.visible = true; m.position.lerp(new THREE.Vector3(0, 0, 60), 0.1); m.scale.lerp(new THREE.Vector3(3.5, 3.5, 3.5), 0.1); m.lookAt(camera.position);
+                    m.visible = true;
+                    m.position.lerp(new THREE.Vector3(0, 0, 65), 0.1); 
+                    m.scale.lerp(new THREE.Vector3(3.5, 3.5, 3.5), 0.1); // Giới hạn zoom không quá to
+                    m.lookAt(camera.position);
                 } else { m.visible = false; m.scale.setScalar(0); }
             });
 
@@ -208,44 +196,25 @@
             bgMusic.play().catch(() => {});
             init3D();
             
-            const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-            hands.setOptions({ maxNumHands: 2, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+            const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+            hands.setOptions({ maxNumHands: 2, modelComplexity: 0, minDetectionConfidence: 0.7 });
             
+            const camCtx = document.getElementById('camera-preview').getContext('2d');
             hands.onResults(results => {
-                const canvasCtx = document.getElementById('camera-preview').getContext('2d');
-                canvasCtx.clearRect(0,0,120,90); canvasCtx.drawImage(results.image, 0, 0, 120, 90);
-                
-                let detectedState = state;
-                let heartDetected = false;
-
+                camCtx.clearRect(0,0,100,75); camCtx.drawImage(results.image, 0, 0, 100, 75);
                 if (results.multiHandLandmarks.length === 2) {
-                    const h1 = results.multiHandLandmarks[0];
-                    const h2 = results.multiHandLandmarks[1];
-                    const distIndex = Math.hypot(h1[8].x - h2[8].x, h1[8].y - h2[8].y);
-                    const distThumb = Math.hypot(h1[4].x - h2[4].x, h1[4].y - h2[4].y);
-                    if (distIndex < 0.35 && distThumb < 0.35) {
-                        detectedState = 'HEART';
-                        heartDetected = true;
-                    }
+                    const h1 = results.multiHandLandmarks[0], h2 = results.multiHandLandmarks[1];
+                    if (Math.hypot(h1[8].x-h2[8].x, h1[8].y-h2[8].y) < 0.2) { state = 'HEART'; return; }
                 }
-
-                if (!heartDetected && results.multiHandLandmarks.length > 0) {
-                    const lm = results.multiHandLandmarks[0];
-                    rawHandX = lm[9].x;
-                    const tips = [8,12,16,20]; const wrist = lm[0];
-                    let d = 0; tips.forEach(i => d += Math.hypot(lm[i].x-wrist.x, lm[i].y-wrist.y));
-                    const handSize = Math.hypot(lm[9].x-lm[0].x, lm[9].y-lm[0].y);
-                    if (d/4 < handSize * 0.8) detectedState = 'TREE'; 
+                if(results.multiHandLandmarks.length > 0) {
+                    const lm = results.multiHandLandmarks[0]; handX = lm[9].x;
+                    const tips = [8,12,16,20]; let d = 0; tips.forEach(i => d += Math.hypot(lm[i].x-lm[0].x, lm[i].y-lm[0].y));
+                    if (d/4 < 0.25) state = 'TREE'; 
                     else {
                         const pinch = Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y);
-                        detectedState = (pinch < handSize * 0.45) ? 'PHOTO' : 'EXPLODE';
+                        state = pinch < 0.06 ? 'PHOTO' : 'EXPLODE';
                     }
                 }
-
-                if (detectedState !== state) {
-                    stateHoldCounter++;
-                    if (stateHoldCounter > 2) { state = detectedState; stateHoldCounter = 0; }
-                } else stateHoldCounter = 0;
             });
 
             const cameraUtils = new Camera(document.querySelector('.input_video'), {
