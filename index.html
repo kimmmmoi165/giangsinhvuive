@@ -39,6 +39,7 @@
         bgMusic.loop = true;
 
         const loader = new THREE.TextureLoader();
+        // Danh sách ảnh của bạn
         const photoFiles = ['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg'];
         const photoTextures = photoFiles.map(f => loader.load(f));
 
@@ -176,14 +177,19 @@
                 if (state === 'EXPLODE') {
                     m.visible = true;
                     const angle = smoothedRotY + i * (Math.PI*2/5);
-                    m.position.lerp(new THREE.Vector3(Math.sin(angle)*30, Math.sin(time+i)*2, Math.cos(angle)*30), 0.1);
+                    // Đẩy ảnh ra xa hơn 1 chút (35) để không bị chồng chéo khi zoom to
+                    m.position.lerp(new THREE.Vector3(Math.sin(angle)*35, Math.sin(time+i)*2, Math.cos(angle)*35), 0.1);
                     m.lookAt(camera.position);
-                    m.scale.setScalar(0.8);
+                    
+                    // --- ĐÃ CHỈNH SỬA: Scale to lên 2.2 ---
+                    m.scale.setScalar(2.2); 
+                    // --------------------------------------
+
                     if (m.position.z > 20) selectedIndex = i;
                 } else if (state === 'PHOTO' && i === selectedIndex) {
                     m.visible = true;
                     m.position.lerp(new THREE.Vector3(0, 0, 65), 0.1); 
-                    m.scale.lerp(new THREE.Vector3(3.5, 3.5, 3.5), 0.1); // Giới hạn zoom không quá to
+                    m.scale.lerp(new THREE.Vector3(5, 5, 5), 0.1); // Giới hạn zoom to nhất khi chụm tay
                     m.lookAt(camera.position);
                 } else { m.visible = false; m.scale.setScalar(0); }
             });
